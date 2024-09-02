@@ -152,3 +152,8 @@
 7. **Prompt Configurations:**
     - Improve the prompt engineering for the image and table summarization, and generation of response.
     - Have all the prompts configurable from one place.
+
+8. **Implement Guardrails:**
+    - Implement guardrails to prevent the application from hallucinating.
+    - Implement guardrails to prevent the application from generating harmful or biased responses.
+    - Implement guardrails to prevent the application from generating responses that are not relevant to the query.
