@@ -19,7 +19,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . /app
 
 # Set environment variable
-ENV OPENAI_API_KEY="sk-u2xOJ5fJ9SQBJpzRRSIMXK0BjDCWLGIIZPz6ymn2DmT3BlbkFJkOylwu39lOTG0DA8FV5PgUR7fqazTPCIiGryY6ARkA"
+ENV OPENAI_API_KEY=<OPENAI_API_KEY>
 
 # Expose the port that the app runs on
 EXPOSE 8000
