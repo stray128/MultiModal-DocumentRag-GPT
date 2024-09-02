@@ -69,46 +69,52 @@
     - Here is an example of how the application interface looks when a PDF is uploaded and processed:
     ![Example Attachment](./screenshots/example_attachment.png)
 
+## Some of the beautiful multimodal extractions we have
+
+1. **Example 1:**
+    - This was the query: "Comment on Benchmark study scores for different models such as Genma, Mistral, Mixtral against versions of Llama" and the pdf used is at [0002.pdf](./src/uploads/0002.pdf)
+    - Not only was the application able to fetch and highlight the relevant context from the pdf, but the response generated was also very good.
+    ![example](./screenshots/example_1.png)
+
+2. **Example 2:**
+    - This was the query: "What are the announcements of OpenAI regarding GPT-4?" and the pdf used is at [0002.pdf](./src/uploads/0002.pdf)
+    - The question was open ended, and the application was able to fetch and highlight the relevant context from the pdf, the context highlighted here could be debated as lengthy. There can be an improvement in the chunking strategy to make the context fetching more efficient.
+    ![example](./screenshots/example_2.png)
+
+3. **Example 3:**
+    - This was the query: "6. At what period in history did the EV / NTM Multiples cross 40x for the top 5 medians?" and the pdf used is at [0003.pdf](./src/uploads/0003.pdf)
+    - This question could only be answered by looking at a running plot of the EV / NTM Multiples. The application was able to identify the image to be relevant, and the response generated was also very good. This is a very good example of how the application can be used to answer questions that require visual context.
+    ![example](./screenshots/example_3.png)
+
+4. **Contextual Retrieval:**
+    - Our retriever indexes summaries and returns raw images or texts, providing accurate and contextually relevant responses to user queries.
+    ![Contextual Retrieval](./screenshots/contextual_retrieval.png)
+
+5. **Multi-Modal Query Processing:**
+    - The system processes queries by considering all available contexts, including text, images, and tables, to generate comprehensive responses.
+    ![Multi-Modal Query Processing](./screenshots/multi_modal_query_processing.png)
+
+6. **PDF Context Highlighting:**
+    - When fetching context from PDFs, the relevant sections are highlighted and the PDF auto-scrolls to the page containing the context, enhancing the user experience.
+    ![PDF Context Highlighting](./screenshots/pdf_context_highlighting.png)
+
+
 ## How the Backend Works
 
 1. **PDF Processing:**
     - The PDF is processed using the `extract_pdf_elements` function to extract elements such as text, tables, and images.
-    - Relevant code block:
-        ```python:src/pdf_processing/pdf_processing.py
-        startLine: 4
-        endLine: 17
-        ```
-    - This algorithm uses `unstructured` library to extract the elements from the pdf. It uses `yolox` as the object detection model to detect the elements in the pdf.
+    - This algorithm uses [`unstructured`](https://docs.unstructured.io/open-source/core-functionality/overview) library to extract the elements from the pdf. It uses `yolox` as the object detection model to detect the elements in the pdf.
 
 2. **Categorizing Elements and Generating Metadata:**
     - The extracted elements are categorized into composite texts and table texts.
-    - Relevant code block:
-        ```python:src/pdf_processing/pdf_processing.py
-        startLine: 20
-        endLine: 27
-        ```
     - The elements are categorized into composite texts and table texts based on the `unstructured` library's default categories. This data is later used to generate metadata for the elements, using which we are able to identify the position of the elements in the pdf and highlight them in the pdf.
 
 3. **Generating Texts, Images and Tables summaries:**
     - The elements are summarized into texts, images and tables using the `unstructured` library.
-    - Relevant prompts used for summarization:
-        ```python:src/summarization/text_summary.py
-        startLine: 19
-        endLine: 24
-        ```
-        ```python:src/summarization/image_summary.py
-        startLine: 44
-        endLine: 48
-        ```
     - Instead of using Image embeddings (CLIP) along with text embeddings in the retriever, we plan to generate good and concise summaries for images and tables, which will be used as the text embeddings for the images and tables in the retriever.
 
 4. **Creating or Updating Multi-Vector Retriever:**
     - The retriever indexes summaries and returns raw images or texts.
-    - Relevant code block:
-        ```python:project/src/vector_store/create_retriever.py
-        startLine: 19
-        endLine: 75
-        ```
 
 5. **Generating Response:**
     - The response is generated using the `rag` library.
