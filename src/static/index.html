@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Processing UI</title>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            background-color: black; /* Change background to black */
+        }
+        .container {
+            display: flex;
+            height: 100%;
+        }
+        .left-column, .right-column {
+            width: 60%; /* Increase the width */
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .section {
+            margin-bottom: 20px;
+        }
+        .section h2 {
+            margin-bottom: 10px;
+            color: white; /* Change text color to white */
+        }
+        .section input[type="file"],
+        .section input[type="text"],
+        .section button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+            border-radius: 15px; /* Add rounded corners */
+        }
+        .scrollable-box {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 15px; /* Add rounded corners */
+        }
+        #pdfViewer {
+            width: 100%;
+            height: calc(100% - 40px);
+            border: 1px solid #ccc;
+            overflow: auto;
+            position: relative;
+        }
+        .highlight {
+            position: absolute;
+            background-color: rgba(255, 255, 0, 0.5); /* Yellow color with 50% opacity */
+            border: none;
+            mix-blend-mode: multiply; /* Apply multiply blend mode */
+        }
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #4CAF50; /* Green */
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            display: none; /* Hidden by default */
+        }
+        .styled-button {
+            background-color: rgba(247, 172, 0, 255); /* Button color */
+            color: black; /* Text color */
+            border: 2px solid rgba(247, 172, 0, 255); /* Border color */
+            border-radius: 15px; /* Circular edges */
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .styled-button:hover {
+            background-color: rgba(247, 172, 0, 200); /* Slightly darker on hover */
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="left-column">
+            <div class="section">
+                <h1 style="color: rgb(247,172,0,255); font-weight: bold;">MultiModal Rag powered Doc-GPT</h1>
+            </div>
+            <div class="section">
+                <h2>Upload PDF</h2>
+                <input type="file" id="fileInput" accept=".pdf" onchange="displayFileName()">
+                <span id="fileName" style="color: white; margin-left: 10px;"></span>
+                <button class="styled-button" onclick="uploadFile()">Upload</button>
+                <p id="uploadResult"></p>
+            </div>
+            <div class="section">
+                <h2>Query</h2>
+                <input type="text" id="queryInput" placeholder="Enter your query">
+                <button class="styled-button" onclick="submitQuery()">Submit</button>
+                <div id="queryResult" class="scrollable-box"></div>
+            </div>
+            <div class="section">
+                <h2>Context Result</h2>
+                <button class="styled-button" onclick="fetchContext()">Get Context</button>
+                <div id="contextResult"></div>
+            </div>
+        </div>
+        <div class="right-column">
+            <div id="pdfViewer"></div>
+        </div>
+    </div>
+
+    <script>
+        let queryMetadata = null;
+
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const uploadButton = document.querySelector('button[onclick="uploadFile()"]');
+            const uploadResult = document.getElementById('uploadResult');
+            const fileNameSpan = document.getElementById('fileName');
+            const file = fileInput.files[0];
+            if (!file) {
+                alert('Please select a file to upload.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            uploadButton.disabled = true;
+            uploadButton.innerText = 'Uploading...';
+            uploadResult.innerText = '';
+
+            const startTime = new Date(); // Start timer
+
+            try {
+                const response = await fetch('/upload/', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+
+                const endTime = new Date(); // End timer
+                const timeTaken = ((endTime - startTime) / 1000).toFixed(2); // Calculate time taken in seconds
+
+                // Create and display the notification card
+                const notification = document.createElement('div');
+                notification.className = 'notification';
+                notification.innerText = `File "${result.filename}" ${result.message} processed successfully in ${timeTaken} seconds.`;
+                document.body.appendChild(notification);
+                notification.style.display = 'block';
+
+                // Hide the notification card after 10 seconds
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                    document.body.removeChild(notification);
+                }, 10000);
+
+                // Clear the file input and file name span
+                fileInput.value = '';
+                fileNameSpan.textContent = '';
+            } catch (error) {
+                console.error('Error uploading file:', error);
+                uploadResult.innerText = 'Error uploading file.';
+            } finally {
+                uploadButton.disabled = false;
+                uploadButton.innerText = 'Upload';
+            }
+        }
+
+        async function getContext(metadata) {
+            const contextResult = document.getElementById('contextResult');
+            try {
+                const response = await fetch('/get_context/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ metadata })
+                });
+                const result = await response.json();
+                if (result.highlights && result.highlights.length > 0) {
+                    await renderPDF(result.highlights, false); // Render PDF without highlights first
+                } else {
+                    document.getElementById('pdfViewer').innerText = 'No context found.';
+                }
+            } catch (error) {
+                console.error('Error getting context:', error);
+                document.getElementById('pdfViewer').innerText = 'Error getting context.';
+            }
+        }
+
+        async function submitQuery() {
+            const queryInput = document.getElementById('queryInput');
+            const submitButton = document.querySelector('button[onclick="submitQuery()"]');
+            const queryResult = document.getElementById('queryResult');
+            const query = queryInput.value;
+            if (!query) {
+                alert('Please enter a query.');
+                return;
+            }
+
+            submitButton.disabled = true;
+            queryResult.innerText = 'Submitting query...';
+            console.log('Marked library:', marked);
+            try {
+                const response = await fetch(`/query/?query=${encodeURIComponent(query)}`);
+                const result = await response.json();
+                if (result.result && result.result.result) {
+                    const markdownContent = result.result.result;
+                    const htmlContent = marked.parse(markdownContent);
+                    queryResult.innerHTML = htmlContent;
+                } else {
+                    queryResult.innerText = 'No result found.';
+                }
+                // Store the metadata for later use
+                if (result.result && result.result.metadata) {
+                    queryMetadata = result.result.metadata;
+                }
+            } catch (error) {
+                console.error('Error submitting query:', error);
+                queryResult.innerText = 'Error submitting query.';
+            } finally {
+                submitButton.disabled = false;
+            }
+        }
+
+        async function fetchContext() {
+            if (queryMetadata) {
+                await getContext(queryMetadata);
+            } else {
+                alert('No metadata available. Please submit a query first.');
+            }
+        }
+
+        async function renderPDF(highlights, applyHighlights = false) {
+            const filename = highlights[0].filename; // Assuming all highlights are from the same file
+            const url = `/uploads/${filename}`;
+            const loadingTask = pdfjsLib.getDocument(url);
+            loadingTask.promise.then(pdf => {
+                const viewer = document.getElementById('pdfViewer');
+                if (!applyHighlights) {
+                    viewer.innerHTML = ''; // Clear previous content only if not applying highlights
+                }
+
+                const renderPage = async (pageNum) => {
+                    const page = await pdf.getPage(pageNum);
+                    const viewport = page.getViewport({ scale: 1 });
+                    const scale = viewer.clientWidth / viewport.width; // Scale based on viewer width
+                    const scaledViewport = page.getViewport({ scale: scale });
+
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    canvas.height = scaledViewport.height;
+                    canvas.width = scaledViewport.width;
+
+                    const renderContext = {
+                        canvasContext: context,
+                        viewport: scaledViewport
+                    };
+
+                    await page.render(renderContext).promise;
+
+                    const pageContainer = document.createElement('div');
+                    pageContainer.className = 'page-container';
+                    pageContainer.style.position = 'relative';
+                    pageContainer.appendChild(canvas);
+                    viewer.appendChild(pageContainer);
+
+                    // Apply highlights for this page if applyHighlights is true
+                    if (applyHighlights) {
+                        highlights.forEach(highlight => {
+                            if (highlight.page_number === pageNum) {
+                                const [x1, y1, x2, y2] = highlight.bbox;
+                                const layout_width = highlight.layout_width;
+                                const layout_height = highlight.layout_height;
+                                const highlightDiv = document.createElement('div');
+                                highlightDiv.className = 'highlight';
+                                highlightDiv.style.position = 'absolute';
+                                highlightDiv.style.left = `${(x1 / layout_width) * scaledViewport.width}px`;
+                                highlightDiv.style.top = `${(y1 / layout_height) * scaledViewport.height}px`;
+                                highlightDiv.style.width = `${((x2 - x1) / layout_width) * scaledViewport.width}px`;
+                                highlightDiv.style.height = `${((y2 - y1) / layout_height) * scaledViewport.height}px`;
+                                pageContainer.appendChild(highlightDiv);
+                            }
+                        });
+                    }
+                };
+
+                const renderAllPages = async () => {
+                    for (let i = 1; i <= pdf.numPages; i++) {
+                        await renderPage(i);
+                    }
+                };
+
+                renderAllPages().then(() => {
+                    if (!applyHighlights) {
+                        // Auto-scroll to the page with the first highlight after 500ms delay
+                        setTimeout(() => {
+                            const firstHighlightPage = highlights[0].page_number;
+                            const pageContainers = viewer.getElementsByClassName('page-container');
+                            if (pageContainers[firstHighlightPage - 1]) {
+                                pageContainers[firstHighlightPage - 1].scrollIntoView({ behavior: 'smooth' });
+                            }
+
+                            // Show highlights after an additional 1500ms delay
+                            setTimeout(() => {
+                                // Apply highlights without re-rendering the PDF
+                                highlights.forEach(highlight => {
+                                    const pageContainer = pageContainers[highlight.page_number - 1];
+                                    if (pageContainer) {
+                                        const [x1, y1, x2, y2] = highlight.bbox;
+                                        const layout_width = highlight.layout_width;
+                                        const layout_height = highlight.layout_height;
+                                        const highlightDiv = document.createElement('div');
+                                        highlightDiv.className = 'highlight';
+                                        highlightDiv.style.position = 'absolute';
+                                        highlightDiv.style.left = `${(x1 / layout_width) * pageContainer.clientWidth}px`;
+                                        highlightDiv.style.top = `${(y1 / layout_height) * pageContainer.clientHeight}px`;
+                                        highlightDiv.style.width = `${((x2 - x1) / layout_width) * pageContainer.clientWidth}px`;
+                                        highlightDiv.style.height = `${((y2 - y1) / layout_height) * pageContainer.clientHeight}px`;
+                                        pageContainer.appendChild(highlightDiv);
+                                    }
+                                });
+                            }, 1500);
+                        }, 500);
+                    }
+                }).catch(reason => {
+                    console.error(reason);
+                    viewer.innerText = 'Error loading PDF.';
+                });
+            }, reason => {
+                console.error(reason);
+                document.getElementById('pdfViewer').innerText = 'Error loading PDF.';
+            });
+        }
+
+        function displayFileName() {
+            const fileInput = document.getElementById('fileInput');
+            const fileNameSpan = document.getElementById('fileName');
+            const file = fileInput.files[0];
+            if (file) {
+                fileNameSpan.textContent = file.name;
+            } else {
+                fileNameSpan.textContent = '';
+            }
+        }
+    </script>
+</body>
+</html>
