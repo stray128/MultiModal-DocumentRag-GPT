@@ -75,6 +75,8 @@
     - The PDF is processed using the `extract_pdf_elements` function to extract elements such as text, tables, and images.
     - Relevant code block:
         ```python:src/pdf_processing/pdf_processing.py
+        startLine: 4
+        endLine: 17
         ```
     - This algorithm uses `unstructured` library to extract the elements from the pdf. It uses `yolox` as the object detection model to detect the elements in the pdf.
 
@@ -82,15 +84,21 @@
     - The extracted elements are categorized into composite texts and table texts.
     - Relevant code block:
         ```python:src/pdf_processing/pdf_processing.py
+        startLine: 20
+        endLine: 27
         ```
     - The elements are categorized into composite texts and table texts based on the `unstructured` library's default categories. This data is later used to generate metadata for the elements, using which we are able to identify the position of the elements in the pdf and highlight them in the pdf.
 
 3. **Generating Texts, Images and Tables summaries:**
     - The elements are summarized into texts, images and tables using the `unstructured` library.
-    - Relevant code blocks:
+    - Relevant prompts used for summarization:
         ```python:src/summarization/text_summary.py
+        startLine: 19
+        endLine: 24
         ```
         ```python:src/summarization/image_summary.py
+        startLine: 44
+        endLine: 48
         ```
     - Instead of using Image embeddings (CLIP) along with text embeddings in the retriever, we plan to generate good and concise summaries for images and tables, which will be used as the text embeddings for the images and tables in the retriever.
 
@@ -105,7 +113,7 @@
 5. **Generating Response:**
     - The response is generated using the `rag` library.
     - Relevant code block:
-        ```python:src/rag/rag.py
+        ```python:src/rag/rag_chain.py
         startLine: 19
         endLine: 75
         ```
@@ -135,3 +143,6 @@
 6. **Multi-Document Context Rendering:**
     - If multiple documents are needed to answer the query, render the context of multiple documents and display them in the browser.
 
+7. **Prompt Configurations:**
+    - Improve the prompt engineering for the image and table summarization, and generation of response.
+    - Have all the prompts configurable from one place.
