@@ -87,7 +87,7 @@
     ![example](./screenshots/example_3.png)
 
 4. **Contextual Retrieval:**
-    - Our retriever indexes summaries and returns raw images or texts, providing accurate and contextually relevant responses to user queries.
+    - The Multivector retriever indexes summaries and returns raw images or texts, providing accurate and contextually relevant responses to user queries.
     ![Contextual Retrieval](./screenshots/contextual_retrieval.png)
 
 5. **Multi-Modal Query Processing:**
