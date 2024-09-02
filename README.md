@@ -82,7 +82,7 @@
     ![example](./screenshots/example_2.png)
 
 3. **Example 3:**
-    - This was the query: "6. At what period in history did the EV / NTM Multiples cross 40x for the top 5 medians?" and the pdf used is at [0003.pdf](./src/uploads/0003.pdf)
+    - This was the query: "At what period in history did the EV / NTM Multiples cross 40x for the top 5 medians?" and the pdf used is at [0003.pdf](./src/uploads/0003.pdf)
     - This question could only be answered by looking at a running plot of the EV / NTM Multiples. The application was able to identify the image to be relevant, and the response generated was also very good. This is a very good example of how the application can be used to answer questions that require visual context.
     ![example](./screenshots/example_3.png)
 
