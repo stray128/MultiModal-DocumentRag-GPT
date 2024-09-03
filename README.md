@@ -23,8 +23,12 @@
     ```bash
     pip install -r requirements.txt
     ```
+4. **Set up OpenAI API key:**
+    ```bash
+    export OPENAI_API_KEY=your_openai_api_key_here
+    ```
 
-4. **Run the application:**
+5. **Run the application:**
     ```bash
     uvicorn src.api:app --reload
     ```
@@ -32,12 +36,18 @@
 
 ### b. Install via Dockerfile
 
-1. **Build the Docker image:**
+1. **Update the Dockerfile with the correct OpenAI API key:**
+    - Open the Dockerfile and add the following line with your OpenAI API key:
+        ```dockerfile
+        ENV OPENAI_API_KEY=your_openai_api_key_here
+        ```
+
+2. **Build the Docker image:**
     ```bash
     docker build -t multimodal-rag-doc-gpt .
     ```
 
-2. **Run the Docker container:**
+3. **Run the Docker container:**
     ```bash
     docker run -p 8000:8000 multimodal-rag-doc-gpt
     ```
