@@ -98,15 +98,12 @@
 
 4. **Contextual Retrieval:**
     - The Multivector retriever indexes summaries and returns raw images or texts, providing accurate and contextually relevant responses to user queries.
-    ![Contextual Retrieval](./screenshots/contextual_retrieval.png)
 
 5. **Multi-Modal Query Processing:**
     - The system processes queries by considering all available contexts, including text, images, and tables, to generate comprehensive responses.
-    ![Multi-Modal Query Processing](./screenshots/multi_modal_query_processing.png)
 
 6. **PDF Context Highlighting:**
     - When fetching context from PDFs, the relevant sections are highlighted and the PDF auto-scrolls to the page containing the context, enhancing the user experience.
-    ![PDF Context Highlighting](./screenshots/pdf_context_highlighting.png)
 
 
 ## How the Backend Works
