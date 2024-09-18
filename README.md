@@ -1,5 +1,11 @@
 # MultiModal Rag powered Doc-GPT
 
+## Introduction:
+
+### This project combines computer vision and NLP to transform unstructured documents into structured data like tables and JSON, handling complex layouts and content that standalone models like ChatGPT struggle with. Using YOLO for layout detection and BERT for text understanding, it can efficiently process large volumes of documents. Built with LangChain and LlamaIndex, it enhances data retrieval and ranking, providing businesses with fast, accurate, and scalable document analysis.
+
+
+
 ## How to Install
 
 ### a. Install via Virtual Environment
