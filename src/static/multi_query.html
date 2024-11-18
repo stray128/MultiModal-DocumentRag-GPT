@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi Query Processing</title>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            background-color: black;
+        }
+        .container {
+            display: flex;
+            height: 100%;
+        }
+        .left-column {
+            width: 40%;
+            height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+        .right-column {
+            width: 60%;
+            height: calc(100vh - 40px);
+            padding: 20px;
+            box-sizing: border-box;
+            position: fixed;
+            right: 0;
+            top: 0;
+        }
+        .section {
+            margin-bottom: 20px;
+            flex-shrink: 0;
+        }
+        .section h2 {
+            margin-bottom: 10px;
+            color: white;
+        }
+        .section input[type="file"],
+        .section input[type="text"],
+        .section button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+            border-radius: 15px;
+        }
+        .styled-button {
+            width: 100%;
+            padding: 15px;
+            background-color: rgb(247,172,0,255);
+            color: black;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            border-radius: 15px;
+            transition: background-color 0.3s;
+            margin-bottom: 10px;
+        }
+        .styled-button:hover {
+            background-color: rgb(247,150,0,255);
+        }
+        .question-item {
+            background-color: #333;
+            color: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            transition: background-color 0.3s;
+        }
+        .question-item:hover {
+            background-color: #444;
+        }
+        .answer-section {
+            display: none;
+            background-color: #2a2a2a;
+            padding: 15px;
+            margin-top: 10px;
+            border-radius: 8px;
+            border-left: 3px solid rgb(247,172,0,255);
+        }
+        .question-input-section {
+            margin: 20px 0;
+        }
+        .question-list {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 10px;
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+            max-height: calc(100vh - 420px);
+        }
+        .question-list::-webkit-scrollbar {
+            width: 8px;
+        }
+        .question-list::-webkit-scrollbar-track {
+            background: #1a1a1a;
+            border-radius: 4px;
+        }
+        .question-list::-webkit-scrollbar-thumb {
+            background: rgb(247,172,0,255);
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .question-list::-webkit-scrollbar-thumb:hover {
+            background: rgb(247,150,0,255);
+        }
+        #pdfViewer {
+            width: 100%;
+            height: calc(100vh - 40px);
+            border: 1px solid #ccc;
+            overflow: auto;
+            position: relative;
+            background-color: #333;
+            border-radius: 8px;
+        }
+        #pdfViewer::-webkit-scrollbar {
+            width: 8px;
+        }
+        #pdfViewer::-webkit-scrollbar-track {
+            background: #1a1a1a;
+            border-radius: 4px;
+        }
+        #pdfViewer::-webkit-scrollbar-thumb {
+            background: rgb(247,172,0,255);
+            border-radius: 4px;
+        }
+        .page-container {
+            position: relative;
+            margin-bottom: 10px;
+        }
+        .page-container canvas {
+            width: 100% !important;
+            height: auto !important;
+            display: block;
+        }
+        .highlight {
+            position: absolute;
+            background-color: rgba(255, 255, 0, 0.5);
+            border: none;
+            mix-blend-mode: multiply;
+        }
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            color: white;
+            display: none;
+            z-index: 1000;
+        }
+        .success {
+            background-color: #4CAF50;
+        }
+        .error {
+            background-color: #f44336;
+        }
+        .loading {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 1000;
+        }
+        .markdown-content {
+            color: #e6e6e6;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+        .markdown-content h1,
+        .markdown-content h2,
+        .markdown-content h3,
+        .markdown-content h4 {
+            color: rgb(247,172,0,255);
+            margin-top: 16px;
+            margin-bottom: 8px;
+        }
+        .markdown-content p {
+            margin: 8px 0;
+        }
+        .markdown-content code {
+            background-color: #2d2d2d;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .markdown-content pre {
+            background-color: #2d2d2d;
+            padding: 12px;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        .markdown-content ul, 
+        .markdown-content ol {
+            padding-left: 20px;
+            margin: 8px 0;
+        }
+        .markdown-content blockquote {
+            border-left: 4px solid rgb(247,172,0,255);
+            margin: 8px 0;
+            padding-left: 16px;
+            color: #b3b3b3;
+        }
+        .process-all-button {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            padding: 15px;
+            background-color: rgb(247,172,0,255);
+            border: none;
+            border-radius: 15px;
+            color: black;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 10;
+        }
+        .questions-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            margin: 20px 0;
+            min-height: 0;
+        }
+        .process-all-button {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            padding: 15px;
+            background-color: rgb(247,172,0,255);
+            border: none;
+            border-radius: 15px;
+            color: black;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 10;
+        }
+        .questions-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            min-height: 0;
+            margin-bottom: 80px;
+        }
+        .bottom-button-container {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: calc(40% - 40px);
+            background-color: black;
+            padding-top: 20px;
+            z-index: 100;
+        }
+        .process-all-button {
+            width: 100%;
+            padding: 15px;
+            background-color: rgb(247,172,0,255);
+            border: none;
+            border-radius: 15px;
+            color: black;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .styled-input {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+            border-radius: 15px;
+            border: none;
+            background-color: #333;
+            color: white;
+            font-size: 14px;
+        }
+        .styled-input::placeholder {
+            color: #888;
+        }
+        .styled-input:focus {
+            outline: none;
+            border: 2px solid rgb(247,172,0,255);
+        }
+        .full-width {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        .question-input-section {
+            margin-bottom: 20px;
+        }
+        /* File input styling */
+        input[type="file"] {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+            border-radius: 15px;
+            background-color: #333;
+            color: white;
+            cursor: pointer;
+        }
+        .question-list {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 10px;
+            max-height: calc(100vh - 480px);
+        }
+        .questions-section::after {
+            content: '';
+            position: absolute;
+            bottom: 80px;
+            left: 0;
+            right: 0;
+            height: 20px;
+            pointer-events: none;
+        }
+        /* File input group styling */
+        .file-input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .clear-button {
+            padding: 8px 12px;
+            background-color: #444;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .clear-button:hover {
+            background-color: #666;
+        }
+        /* Bottom button group */
+        .button-group {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .button-group .styled-button {
+            flex: 1;
+            margin: 0;
+        }
+        .download-button {
+            background-color: #444 !important;
+        }
+        .clear-session {
+            background-color: #444 !important;
+        }
+        .clear-session:hover {
+            background-color: #666 !important;
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .loading-content {
+            background-color: #2d2d2d;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .loading-message {
+            color: #fff;
+            margin-top: 15px;
+            font-size: 18px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid rgb(247,172,0,255);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Add Font Awesome for the download icon */
+        @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <div id="loadingMessage" class="loading-message">Processing...</div>
+        </div>
+    </div>
+    <div class="notification" id="notification"></div>
+    <div class="container">
+        <div class="left-column">
+            <div class="section">
+                <h1 style="color: rgb(247,172,0,255); font-weight: bold;">Multi Query Processing</h1>
+            </div>
+            <div class="section">
+                <h2>Upload PDF</h2>
+                <div class="file-input-group">
+                    <input type="file" id="fileInput" accept=".pdf" onchange="displayFileName()">
+                    <button class="clear-button" onclick="clearFileInput('fileInput')">✕</button>
+                </div>
+                <span id="fileName" style="color: white; margin-left: 10px;"></span>
+                <button class="styled-button" onclick="uploadFile()">Upload</button>
+                <p id="uploadResult" style="color: white;"></p>
+            </div>
+            <div class="questions-section">
+                <h2>Questions Input</h2>
+                <div class="question-input-section">
+                    <div class="file-input-group">
+                        <input type="file" id="questionsFile" accept=".csv,.xlsx" onchange="handleFileUpload()">
+                        <button class="clear-button" onclick="clearFileInput('questionsFile')">✕</button>
+                    </div>
+                    <button class="styled-button">Upload Questions</button>
+                </div>
+                <div class="question-input-section">
+                    <input type="text" id="questionInput" placeholder="Enter a question" class="styled-input">
+                    <button class="styled-button" onclick="addQuestion()">Add Question</button>
+                </div>
+                <div class="question-list" id="questionList">
+                    <!-- Questions will be dynamically added here -->
+                </div>
+            </div>
+            <div class="bottom-button-container">
+                <div class="button-group">
+                    <button class="styled-button" onclick="processAllQuestions()">
+                        Process All Questions
+                    </button>
+                    <button class="styled-button clear-session" onclick="clearSession()">
+                        Clear Session
+                    </button>
+                    <button class="styled-button download-button" onclick="downloadResults()">
+                        <i class="fas fa-download"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="right-column">
+            <div id="pdfViewer"></div>
+        </div>
+    </div>
+    <script src="js/multi_query.js"></script>
+</body>
+</html>
